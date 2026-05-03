@@ -9,8 +9,9 @@
  * Output: docs/funnel-archive/dashboard.html
  */
 
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, readdirSync, existsSync, writeFileSync, mkdirSync } from 'node:fs';
+import { join, dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // ─── pValueTwoProp ────────────────────────────────────────────────────────
 //
@@ -712,6 +713,57 @@ const CLIENT_JS = `
   }
 })();
 `;
+
+// ─── main / CLI ──────────────────────────────────────────────────────────
+
+export function main(argv = process.argv) {
+  const args = parseArgs(argv.slice(2));
+  const rootDir = resolve(args.root ?? process.cwd());
+  const outPath = resolve(args.out ?? join(rootDir, 'docs/funnel-archive/dashboard.html'));
+
+  const inputs = loadInputs(rootDir);
+  const funnel = buildFunnelModel(inputs.config, inputs.snapshot);
+  const trend = buildTrendModel(inputs.config, inputs.history);
+  const experiment = buildExperimentModel(inputs.config, inputs.snapshot, inputs.evaluation, inputs.plan);
+
+  const html = renderHTML({
+    config: inputs.config,
+    funnel,
+    trend,
+    experiment,
+    history: inputs.state?.history ?? [],
+    meta: inputs.snapshot.meta,
+    kpiByName: inputs.snapshot.kpi ?? {},
+  });
+
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, html);
+
+  // Console summary (mirrors collect-data.mjs style).
+  console.log('=== Funnel Dashboard ===');
+  console.log('Output: ' + outPath);
+  console.log('Funnel steps: ' + funnel.length);
+  console.log('Trend weeks: ' + (trend.available ? trend.weeks.length : 0));
+  console.log('Active experiment: ' + (experiment ? experiment.name ?? 'unnamed' : 'none'));
+}
+
+function parseArgs(argv) {
+  const out = {};
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--root') { out.root = argv[++i]; }
+    else if (a === '--out') { out.out = argv[++i]; }
+  }
+  return out;
+}
+
+// Only run main when invoked directly (not when imported by tests).
+const __thisFile = fileURLToPath(import.meta.url);
+const __invokedDirect = process.argv[1] && resolve(process.argv[1]) === __thisFile;
+if (__invokedDirect) {
+  try { main(); }
+  catch (err) { console.error(err.message); process.exit(1); }
+}
 
 // Abramowitz & Stegun 26.2.17 approximation of the standard normal CDF.
 function normalCdf(x) {

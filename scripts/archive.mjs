@@ -14,6 +14,7 @@
 import fs from 'fs';
 import path from 'path';
 import { loadEnv, loadConfig, loadState, ROOT_DIR, formatDate } from './lib.mjs';
+import { spawnSync } from 'node:child_process';
 
 loadEnv();
 
@@ -68,6 +69,17 @@ async function main() {
 
   updateIndex();
   console.log('Index updated.');
+
+  // Refresh the visual dashboard (best-effort; archive shouldn't fail because of it).
+  console.log('Rendering dashboard...');
+  const r = spawnSync(process.execPath, ['scripts/render-dashboard.mjs'], {
+    cwd: ROOT_DIR,
+    stdio: 'inherit',
+  });
+  if (r.status !== 0) {
+    console.log('  (dashboard render failed; continuing — see error above)');
+  }
+
   console.log('\nDone.');
 }
 

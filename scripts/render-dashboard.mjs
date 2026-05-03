@@ -361,7 +361,8 @@ export function formatPValue(p) {
 export function renderHTML({ config, funnel, trend, experiment, history, meta, kpiByName }) {
   const projectName = escapeHtml(config?.project?.name ?? 'Funnel Optimize');
   const periodEnd = escapeHtml(meta?.period_end ?? '');
-  const periodDays = meta?.period_days ?? 7;
+  const periodDays = Number(meta?.period_days ?? 7);
+  const trendWeeksCount = Number(trend?.weeks?.length ?? 0);
   const purchaseStep = detectPurchaseStep(config) ?? '';
 
   // Pre-build KPI tiles server-side so the client doesn't have to do fragile
@@ -415,7 +416,7 @@ export function renderHTML({ config, funnel, trend, experiment, history, meta, k
 <main>
   <section class="card" id="funnel-trend" ${trend?.available ? '' : 'data-empty="true"'}>
     <header class="card-h">
-      <h2>Trend — last ${trend?.weeks?.length ?? 0} weeks</h2>
+      <h2>Trend — last ${trendWeeksCount} weeks</h2>
       <p class="muted">Cumulative conversion from first step. Up = improvement.</p>
     </header>
     <div class="card-body" id="trend-body">

@@ -324,8 +324,10 @@ test('renderHTML produces a complete HTML document with inlined data block', () 
   assert.match(html, /id="funnel-current"/);
   assert.match(html, /id="funnel-trend"/);
   assert.match(html, /id="funnel-experiment"/);
-  // No external assets
-  assert.equal(/https?:\/\//.test(html.match(/<link[^>]+>/g)?.join('') ?? ''), false);
+  // No external assets — neither link rel/href nor script src to any URL.
+  assert.equal(/<link[^>]+href=["']https?:/.test(html), false, 'unexpected external <link>');
+  assert.equal(/<script[^>]+src=["']https?:/.test(html), false, 'unexpected external <script>');
+  assert.equal(/url\(["']?https?:/.test(html), false, 'unexpected external url() in CSS');
 });
 
 test('renderHTML hides the trend section when trend.available is false', () => {

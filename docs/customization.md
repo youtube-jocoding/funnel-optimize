@@ -20,10 +20,11 @@ Everything customizable lives in `funnel-config.json`.
     "max_concurrent_experiments": 1,
     "min_sample_size": 500,
     "significance_level": 0.05,
-    "min_early_decision_days": 3,
-    "experiment_duration_days": 7,
-    "max_experiment_days": 14,
-    "analysis_days": 7
+    "min_early_decision_days": 0,           // calendar floor; 0 = no floor (apply on significance immediately)
+    "experiment_window_days": 7,            // DAU-derived during /funnel-discover
+    "max_experiment_days": 28,              // hard cap; force decision at this point
+    "expected_dau": null,                   // recorded by /funnel-discover (informational)
+    "min_detectable_lift_pct": 10           // recorded by /funnel-discover (informational)
   },
   "optimization_targets": [
     {
@@ -135,7 +136,17 @@ POSTHOG_HOST=https://eu.i.posthog.com
 - `min_sample_size: 500` — going below 200 risks false positives
 - `significance_level: 0.05` — standard. 0.01 means longer experiments
 - `max_concurrent_experiments: 1` — multi-experiment causes flag conflicts
-- `scoring_weights` — Layer 1 was tuned on animalface. Adjust gradually.
+- `scoring_weights` — Layer 1 was tuned on a real-world product. Adjust gradually.
+
+## How `experiment_window_days` is computed
+
+During `/funnel-discover` D-4, the script asks for your DAU on the primary impression event and computes:
+
+```
+experiment_window_days = clamp(ceil(min_sample_size / DAU), 3, max_experiment_days)
+```
+
+This is the *target* window. The actual experiment terminates as soon as significance is reached (`min_sample_size + p < significance_level`), which is often earlier than the window. Set `min_early_decision_days > 0` if you want a hard calendar floor for novelty / day-of-week effects.
 
 ## Migrating from existing experiment infra
 

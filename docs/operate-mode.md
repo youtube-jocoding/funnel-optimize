@@ -1,15 +1,26 @@
-# Operate Mode (weekly workflow)
+# Operate Mode
 
-The 7-phase pipeline that runs weekly to evaluate experiments, diagnose funnel issues, design new experiments, and ship code.
+The 7-phase pipeline that evaluates the active experiment, diagnoses funnel issues, designs new experiments, and ships code.
+
+## Cadence
+
+There is no fixed cadence. Run `/funnel-optimize` whenever you want to advance the loop. The pipeline detects state and acts accordingly:
+
+- **Still collecting** (`continue`) → diagnostic update only, no new experiment.
+- **Significance reached** (`winner_test` / `winner_control`) → finalize, clean up code, and design the next experiment.
+- **Killed** (manual or guardrail) → cleanup → next experiment.
+
+The collection window is determined by `automation.experiment_window_days` in `funnel-config.json` (computed from your DAU during Discovery). Significance can fire **earlier** than the window — as soon as `min_sample_size + p<significance_level` is met, the winner applies.
 
 ## Trigger
 
 In Claude Code: `/funnel-optimize`
 
 Manual command-line equivalent:
+
 ```bash
 # Phase 1
-node scripts/funnel-automation/collect-data.mjs --days 7
+node scripts/funnel-automation/collect-data.mjs            # uses experiment_window_days from config
 node scripts/funnel-automation/evaluate-experiment.mjs
 
 # Phase 2: Claude Code reads snapshot.json and writes diagnosis to FUNNEL_OPTIMIZATION_REPORT.md
@@ -40,14 +51,17 @@ Phase 1 evaluation result:
     └── → Phase 5-C → Phase 3
 ```
 
-## Early termination
+## Significance-driven termination
 
-Experiment terminates early when:
-- `min_early_decision_days` met (default: 3)
-- `min_sample_size` met (default: 500 impressions)
-- p-value < `significance_level` (default: 0.05)
+Experiment terminates as soon as **all** of these hold:
 
-Forced termination at `max_experiment_days` (default: 14).
+- `min_sample_size` reached (default `500`)
+- `p < significance_level` (default `0.05`)
+- (Optional) `min_early_decision_days` floor met (default `0` — no floor)
+
+Forced termination at `max_experiment_days` (default: `28`).
+
+To require a calendar floor (e.g. for novelty/day-of-week effects on slow-moving products), set `automation.min_early_decision_days` to a positive value.
 
 ## Manual Kill
 
@@ -57,22 +71,20 @@ node scripts/funnel-automation/evaluate-experiment.mjs --kill
 
 → Disables PostHog flag immediately + records `ended_reason: "killed"` in history.
 
-## Critical rules (from animalface 7-week learning)
+## Critical rules
 
 ### 1. Real revenue over vanity
-**Never ship based on CTR alone.** CTR is a proxy. The pipeline learned this the hard way: a +521% CTR experiment shipped, then reverted when 0 actual payments occurred.
-
-The Ship gate: `optimization_targets[].priority=P0` must show positive lift, not just CTR.
+**Never ship based on CTR alone.** CTR is a proxy. Ship by `optimization_targets[].priority=P0` (typically a real revenue event), not by click-through rates.
 
 ### 2. Structural changes beat copy changes
-3 consecutive copy-only experiments failed. The pipeline now preserves this in `patterns.json` and prompts agents to avoid copy-only proposals.
+Repeated CTA-copy-only experiments tend to plateau. Once the pattern history records consecutive copy-only failures, agents are prompted to propose layout/timing/surface changes instead.
 
 ### 3. Guardrails are non-negotiable
 - Dark patterns (fake urgency, fake social proof, deceptive buttons) → automatically rejected
 - Files outside `allowed_files` → automatically rejected
 - Domains outside `allowed_domains_for_redirects` → automatically rejected
 - eval/innerHTML/dangerouslySetInnerHTML → automatically rejected
-- Stripe key/price modifications → automatically rejected
+- Payment-key / price-id modifications → automatically rejected
 
 ## Cumulative Learning
 
@@ -81,6 +93,6 @@ The Ship gate: `optimization_targets[].priority=P0` must show positive lift, not
 node scripts/funnel-automation/feedback-loop.mjs --ingest
 ```
 
-This updates `patterns.json` with what worked / what failed. Next week's Triple-Agent prompt automatically includes:
+This updates `patterns.json` with what worked / what failed. The next agent prompt automatically includes:
 > "Past failures to avoid: <patterns>"
 > "Past successes to consider: <patterns>"

@@ -36,7 +36,7 @@ function buildFixtureRoot({ withLatest = true, withHistory = true, withState = t
 test('loadInputs reads config + latest snapshot from a fixture root', () => {
   const root = buildFixtureRoot();
   const inputs = loadInputs(root);
-  assert.equal(inputs.config.project.name, 'animalface-test-fixture');
+  assert.equal(inputs.config.project.name, 'demo');
   assert.equal(inputs.snapshot.funnel.results[0][0], '$pageview');
   assert.equal(inputs.history.length, 3);
   // History sorted ascending by date in filename
@@ -54,7 +54,7 @@ test('loadInputs throws an actionable error when latest-snapshot.json is missing
   );
 });
 
-test('loadInputs returns empty history when no weekly snapshots exist', () => {
+test('loadInputs returns empty history when no historical snapshots exist', () => {
   const root = buildFixtureRoot({ withHistory: false });
   const inputs = loadInputs(root);
   assert.equal(inputs.history.length, 0);
@@ -79,8 +79,8 @@ test('pValueTwoProp returns p ≈ 1 when proportions are identical', () => {
   assert.ok(Math.abs(result.z) < 0.01, `z should be ≈ 0, got ${result.z}`);
 });
 
-test('pValueTwoProp matches the animalface week-7 reported p ≈ 0.17', () => {
-  // control 0/4631, test 2/4931 — case-study reports p=0.1682
+test('pValueTwoProp matches the reference fixture p ≈ 0.17', () => {
+  // control 0/4631, test 2/4931 — fixture reports p=0.1682
   const result = pValueTwoProp(0, 4631, 2, 4931);
   assert.ok(result !== null);
   // Allow generous tolerance — different test variants give slightly different numbers.

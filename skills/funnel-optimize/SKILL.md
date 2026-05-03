@@ -2,7 +2,7 @@
 name: funnel-optimize
 description: >
   PostHog 데이터 기반 퍼널 최적화 자동화 파이프라인.
-  Discovery 모드 (프로젝트 분석 → KPI 설계 → config 생성) +
+  Discovery 모드 (프로젝트 분석 → KPI/DAU 설계 → config 생성) +
   Operate 모드 (7-Phase 운영: 데이터 수집 → 진단 → Triple-Agent 실험 설계 → 구현 → PR).
   "퍼널", "전환율", "CTR", "실험", "A/B 테스트", "PostHog", "KPI", "결제 개선", "공유율" 등 관련 요청 시 사용.
   `/funnel-discover`, `/funnel-optimize` 슬래시 명령으로 호출.
@@ -12,31 +12,38 @@ description: >
 
 PostHog 데이터 기반 퍼널 최적화 자동화. Triple-Agent(Claude+Codex+Gemini, Codex/Gemini는 optional) 경쟁으로 최적 실험 설계 + 자동 구현 + PR 생성.
 
+주기는 캘린더가 아니라 **데이터 기반**: Discovery에서 DAU로 적정 `experiment_window_days`를 계산, 그 이후 `min_sample_size + p<significance_level` 조건이 충족되는 즉시 winner를 적용한다 (1분이라도 충족하면 즉시 적용).
+
 ## 두 가지 모드
 
 ### `/funnel-discover` (한 번 — 첫 설치 시)
 
-새 사용자가 자기 프로젝트의 KPI를 설계. Phase D-1~D-4:
+새 사용자가 자기 프로젝트의 KPI + 실험 모수 설계. Phase D-1~D-4:
 
 1. **D-1: 프로젝트 분석** — `node scripts/funnel-automation/discover.mjs --phase D-1`
 2. **D-2: PostHog 이벤트 카탈로그** — `node scripts/funnel-automation/discover.mjs --phase D-2`
-3. **D-3: KPI 인터뷰** — interview prompt 생성. Claude Code가 사용자에게 6개 질문:
+3. **D-3: KPI 인터뷰** — interview prompt 생성. Claude Code가 사용자에게 7개 질문:
    - North Star metric
    - Real revenue event (proxy 아님)
    - Value moment event
    - 1~3개 P0 KPI 정의
+   - **Approximate DAU on impression event** (실험 기간 산출용)
    - allowed_files
    - allowed_domains
 4. **D-4: Config 생성** — `node scripts/funnel-automation/discover.mjs --phase D-4 --interview-result '<JSON>'`
+   `experiment_window_days = ceil(min_sample_size / DAU)` 자동 계산하여 config에 기록.
 
 완료 후 `funnel-config.json` 생성됨. 사용자 검토 → 첫 dry-run:
 ```
-node scripts/funnel-automation/collect-data.mjs --days 7
+node scripts/funnel-automation/collect-data.mjs
 ```
+(`--days` 미지정 시 config의 `experiment_window_days` 사용.)
 
-### `/funnel-optimize` (매주 — 운영 모드)
+### `/funnel-optimize` (운영 모드 — 실험 한 사이클)
 
-7-Phase 자동 실행. 자세한 절차는 `docs/operate-mode.md` 참조.
+언제든 실행. 7-Phase 자동 실행. 자세한 절차는 `docs/operate-mode.md` 참조.
+
+**조기 종료 (significance-driven)**: `min_sample_size` 도달 + `p<significance_level` 충족 시 즉시 winner 결정 → Phase 5-C 자동. 캘린더 주기 기다리지 않음. 보수적 floor를 두고 싶으면 `automation.min_early_decision_days`를 0보다 큰 값으로 설정 (기본값 0).
 
 ## 실행 전 체크리스트
 
@@ -50,7 +57,7 @@ node scripts/funnel-automation/collect-data.mjs --days 7
 ### Phase 1: 데이터 수집 + 실험 평가
 
 ```bash
-node scripts/funnel-automation/collect-data.mjs --days 7
+node scripts/funnel-automation/collect-data.mjs            # config의 experiment_window_days 사용
 node scripts/funnel-automation/evaluate-experiment.mjs
 ```
 
@@ -62,7 +69,7 @@ node scripts/funnel-automation/evaluate-experiment.mjs
 
 **수동 Kill**: `node scripts/funnel-automation/evaluate-experiment.mjs --kill`
 
-**조기 종료**: min 3일 + 500 노출 + p<0.05 → 자동 결정 (config의 `min_early_decision_days`, `min_sample_size`, `significance_level`)
+**조기 종료 (significance-driven)**: `min_sample_size` 도달 + `p<significance_level` 충족 시 즉시 결정. 캘린더 floor 없음 (기본 `min_early_decision_days: 0`). 보수적으로 가려면 config에서 floor를 0보다 큰 값으로 설정 가능.
 
 ### Phase 2: 진단 분석
 
@@ -161,12 +168,12 @@ node scripts/funnel-automation/feedback-loop.mjs --ingest
 node scripts/funnel-automation/archive.mjs
 
 # FUNNEL_STATUS.md 업데이트 (직접)
-# Git commit + PR
-git checkout -b funnel/weekly-{날짜}
+# Git commit + PR — branch 이름은 flag-key 기반 (실험 한 사이클 단위)
+git checkout -b funnel/{flag-key}
 git add FUNNEL_OPTIMIZATION_REPORT.md FUNNEL_STATUS.md .funnel-state/ docs/funnel-archive/
-git commit -m "chore: weekly funnel optimization — {날짜}"
-git push -u origin funnel/weekly-{날짜}
-gh pr create --title "[Funnel] Weekly — {날짜}" --body "..."
+git commit -m "chore: funnel optimization — {flag-key}"
+git push -u origin funnel/{flag-key}
+gh pr create --title "[Funnel] {experiment-name}" --body "..."
 ```
 
 ## experiment-plan.json 스키마
@@ -196,18 +203,18 @@ gh pr create --title "[Funnel] Weekly — {날짜}" --body "..."
     "event_denominator": "impression_event",
     "target_lift": 30
   },
-  "estimated_duration_days": 7
+  "estimated_duration_days": "<config.automation.experiment_window_days>"
 }
 ```
 
-## 핵심 원칙 (animalface 7주 학습 반영)
+## 핵심 원칙
 
 ### 1. Real revenue over vanity
 - Ship 판정은 실 매출(`config.optimization_targets[].priority=P0`) 지표로
 - CTR/체크아웃 진입 같은 proxy로 Ship 금지
 
 ### 2. 구조적 변경 우선
-- CTA 문구만 바꾸는 실험은 보통 실패 (animalface는 3회 연속 실패)
+- CTA 문구만 바꾸는 실험은 일반적으로 실패률이 높음
 - 위치 변경, 타이밍 변경, 새 surface 추가가 더 강한 레버
 
 ### 3. 가드레일 엄격
@@ -230,6 +237,6 @@ gh pr create --title "[Funnel] Weekly — {날짜}" --body "..."
 
 ## 참고 자료
 
-- 사례 연구: `examples/animalface/case-study.md` — 7주 18,000명 검증
+- 데모 dashboard: `examples/demo/dashboard.html` (test fixture에서 렌더링됨)
 - 커스터마이징: `docs/customization.md`
 - FAQ: `docs/faq.md`

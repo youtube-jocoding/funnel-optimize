@@ -10,9 +10,9 @@ Currently PostHog only. Mixpanel / Amplitude / GA4 adapters wanted.
 How: extract `createPostHogClient()` interface from `lib.mjs` into an interface; implement new clients matching it.
 
 ### Framework examples
-Currently `examples/animalface` (React + Astro). Wanted: Next.js, Vue, Svelte, plain HTML.
+Currently `examples/demo` (generic config + dashboard). Wanted: Next.js, Vue, Svelte, plain HTML real-world configs.
 
-How: add `examples/<framework>/` with funnel-config.json, sample useExperiment hook, and case study.
+How: add `examples/<framework>/` with `funnel-config.json` + sample `useExperiment` hook.
 
 ### Discovery prompt improvements
 The Discovery interview asks 6 questions. There are surely better questions for B2B SaaS, e-commerce, marketplaces.
@@ -25,7 +25,7 @@ How: edit `scripts/discover.mjs` `generateInterviewPrompt()`. Add domain-specifi
 ## Workflow
 
 1. Fork + branch
-2. Test changes against `examples/animalface/funnel-config.json` (it's a real-world config)
+2. Test changes against `examples/demo/funnel-config.json` and the `tests/fixtures/dashboard/` fixtures
 3. Run `node --check scripts/*.mjs` and `bash -n scripts/*.sh`
 4. Open PR with:
    - What problem you're solving
@@ -41,7 +41,11 @@ How: edit `scripts/discover.mjs` `generateInterviewPrompt()`. Add domain-specifi
 
 ## Testing without a real project
 
-Use `examples/animalface/funnel-config.json` as a test config. Snapshots in `examples/animalface/` are real PostHog data anonymized.
+Use `examples/demo/funnel-config.json` as a test config. Dashboard rendering tests use `tests/fixtures/dashboard/` which contains anonymized PostHog snapshot data.
+
+```bash
+npm test   # runs node --test against the dashboard fixtures
+```
 
 ## License
 

@@ -1,7 +1,7 @@
 {
   "name": "funnel-optimize",
   "version": "0.1.1",
-  "description": "AI-driven funnel optimization for product teams. Triple-agent A/B test design, weekly cadence, accumulated learning. PostHog-powered.",
+  "description": "AI-driven funnel optimization for product teams. Triple-agent A/B test design, DAU-aware experiment windows, accumulated learning. PostHog-powered.",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "discover": "node scripts/discover.mjs",
-    "collect": "node scripts/collect-data.mjs --days 7",
+    "collect": "node scripts/collect-data.mjs",
     "evaluate": "node scripts/evaluate-experiment.mjs",
     "implement": "node scripts/implement-experiment.mjs",
     "archive": "node scripts/archive.mjs",

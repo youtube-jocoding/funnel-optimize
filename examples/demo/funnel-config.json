@@ -1,0 +1,92 @@
+{
+  "_comment": "Generic demo config. Copy + adapt for your project. See docs/customization.md for the full schema.",
+  "project": {
+    "name": "demo",
+    "framework": "react",
+    "north_star": {
+      "metric": "weekly_paid_users",
+      "target": "growth"
+    }
+  },
+  "automation": {
+    "enabled": true,
+    "auto_merge": false,
+    "max_concurrent_experiments": 1,
+    "min_sample_size": 500,
+    "significance_level": 0.05,
+    "min_early_decision_days": 0,
+    "experiment_window_days": 7,
+    "max_experiment_days": 28,
+    "expected_dau": null,
+    "min_detectable_lift_pct": 10
+  },
+  "optimization_targets": [
+    {
+      "kpi": "paid_rate",
+      "metric_name": "Paid Conversion Rate (real revenue)",
+      "impression_event": "result_view",
+      "click_events": ["payment_completed"],
+      "current": 0,
+      "target": 1.0,
+      "priority": "P0",
+      "direction": "higher"
+    },
+    {
+      "kpi": "checkout_paid_rate",
+      "metric_name": "Checkout to Paid",
+      "impression_event": "checkout_started",
+      "click_events": ["payment_completed"],
+      "current": 0,
+      "target": 50.0,
+      "priority": "P0",
+      "direction": "higher"
+    },
+    {
+      "kpi": "cta_ctr",
+      "metric_name": "Primary CTA CTR (proxy)",
+      "impression_event": "cta_impression",
+      "click_events": ["cta_click"],
+      "current": 0,
+      "target": 4.0,
+      "priority": "P2",
+      "direction": "higher"
+    }
+  ],
+  "funnel": {
+    "steps": ["$pageview", "primary_action", "result_view", "checkout_started", "payment_completed"]
+  },
+  "guardrails": {
+    "no_dark_patterns": true,
+    "no_fake_urgency": true,
+    "no_fake_social_proof": true,
+    "preserve_accessibility": true,
+    "max_code_changes": 5,
+    "allowed_files": [
+      "src/components/*.tsx",
+      "src/lib/translations.ts"
+    ],
+    "allowed_domains_for_redirects": ["yoursite.com", "localhost"]
+  },
+  "multi_agent": {
+    "enabled": true,
+    "agents": ["claude", "codex", "gemini"],
+    "timeout_seconds": 1800,
+    "auto_select_threshold": 10,
+    "human_review_threshold": 5,
+    "fallback_agent": "claude",
+    "preserve_losing_proposal": true,
+    "scoring_weights": {
+      "completeness": 15,
+      "schema_validity": 20,
+      "code_validity": 25,
+      "guardrail_compliance": 15,
+      "kpi_alignment": 10,
+      "novelty": 10,
+      "analysis_depth": 5
+    }
+  },
+  "posthog": {
+    "host": "https://us.i.posthog.com",
+    "feature_flag_prefix": "funnel-exp-"
+  }
+}

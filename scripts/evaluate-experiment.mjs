@@ -230,9 +230,15 @@ async function main() {
 
   let decision;
   const minSample = config.automation.min_sample_size;
-  const minEarlyDays = config.automation.min_early_decision_days || 3;
-  const targetDays = config.automation.experiment_duration_days;
-  const maxDays = config.automation.max_experiment_days || targetDays * 2;
+  // No calendar floor by default — significance fires immediately. Set
+  // min_early_decision_days > 0 to add a novelty/day-of-week guard.
+  const minEarlyDays = Number.isFinite(config.automation.min_early_decision_days)
+    ? config.automation.min_early_decision_days
+    : 0;
+  const windowDays = config.automation.experiment_window_days
+    ?? config.automation.experiment_duration_days   // legacy alias
+    ?? 7;
+  const maxDays = config.automation.max_experiment_days || windowDays * 4;
   const sigLevel = config.automation.significance_level || 0.05;
 
   // Gate 1: Need minimum data before any decision
@@ -241,8 +247,8 @@ async function main() {
       action: 'continue',
       reason: `Insufficient data: ${totalUsers}/${minSample} impressions, ${daysSinceStart} days`,
     };
-  } else if (daysSinceStart < minEarlyDays) {
-    // Gate 2: Absolute minimum days (avoid novelty effects / day-of-week bias)
+  } else if (minEarlyDays > 0 && daysSinceStart < minEarlyDays) {
+    // Optional Gate 2: calendar floor (only if user opted in via config)
     decision = {
       action: 'continue',
       reason: `Minimum observation period: ${daysSinceStart}/${minEarlyDays} days`,

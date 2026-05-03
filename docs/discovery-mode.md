@@ -5,7 +5,7 @@ Run this once when setting up funnel-optimize for a new project. Output: `funnel
 ## Prerequisites
 
 - `.env` configured with `POSTHOG_API_KEY`, `POSTHOG_PROJECT_ID`
-- Project's PostHog has at least 7-30 days of event history
+- Project's PostHog has at least 14-30 days of event history (so DAU on the impression event is stable enough to size the experiment window)
 - Claude Code CLI installed (required for D-3 interview)
 
 ## Usage
@@ -35,31 +35,33 @@ node scripts/funnel-automation/discover.mjs --phase D-4 --interview-result '<JSO
 - Output: `.funnel-state/discover-d2.json`
 
 ### D-3: KPI Interview
-- Generates a markdown prompt for Claude Code to ask the user 6 questions
+- Generates a markdown prompt for Claude Code to ask the user 7 questions
 - Output: `.funnel-state/discover-d3-interview-prompt.md`
 
-The 6 questions:
+The 7 questions:
 1. North Star metric
 2. **Real revenue event** (NOT proxy/click — actual payment event)
 3. Value moment event (when user experiences core value)
 4. 1-3 KPIs to optimize (impression event, click events, target rate, priority)
-5. allowed_files (paths or globs the AI can modify)
-6. allowed_domains_for_redirects (fetch/redirect whitelist)
+5. **Approximate DAU on the primary impression event** (used to size `experiment_window_days`)
+6. allowed_files (paths or globs the AI can modify)
+7. allowed_domains_for_redirects (fetch/redirect whitelist)
 
 ### D-4: Config Generation
 - Takes interview answers + D-1/D-2 outputs
+- Computes `experiment_window_days = ceil(min_sample_size / DAU)` (clamped to `[3, max_experiment_days]`)
 - Writes `funnel-config.json`
 - Backs up existing config to `funnel-config.json.bak` if present
 
 ## After Discovery
 
-1. Review `funnel-config.json` — adjust target rates, add more KPIs
+1. Review `funnel-config.json` — adjust target rates, add more KPIs, sanity-check `experiment_window_days`
 2. Run first dry-run:
    ```bash
-   node scripts/funnel-automation/collect-data.mjs --days 7
+   node scripts/funnel-automation/collect-data.mjs   # uses experiment_window_days from config
    ```
 3. Verify KPI dashboard prints with sensible numbers
-4. Start weekly loop with `/funnel-optimize`
+4. Start the loop with `/funnel-optimize` — run it whenever you want to advance the cycle.
 
 ## Re-running
 

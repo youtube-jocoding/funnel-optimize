@@ -14,10 +14,11 @@
     "max_concurrent_experiments": 1,
     "min_sample_size": 500,
     "significance_level": 0.05,
-    "min_early_decision_days": 3,
-    "experiment_duration_days": 7,
-    "max_experiment_days": 14,
-    "analysis_days": 7
+    "min_early_decision_days": 0,
+    "experiment_window_days": 7,
+    "max_experiment_days": 28,
+    "expected_dau": null,
+    "min_detectable_lift_pct": 10
   },
   "optimization_targets": [
     {

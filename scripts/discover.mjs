@@ -312,8 +312,9 @@ Ask the user the following questions ONE AT A TIME (wait for each answer before 
 2. "Looking at the revenue-related events above, which event represents 'real revenue' (actual payment, NOT click/checkout-attempt)?"
 3. "What is your 'result/value moment' event? (e.g., result_view, signup_complete — when user experiences the core value)"
 4. "Which 1-3 KPIs do you want to optimize? For each: P0/P1/P2 priority + impression event + click event + target rate %"
-5. "Which files should AI agents be allowed to modify? (list 1-5 paths or globs)"
-6. "What domains should be allowed for redirects/fetch? (e.g., yoursite.com, localhost — Stripe/PostHog auto-included)"
+5. "Approximate **DAU on the primary impression event** (the P0 KPI's impression_event). Used to size the experiment window so each cycle reaches significance. Round number is fine (e.g., 200, 1500, 18000)."
+6. "Which files should AI agents be allowed to modify? (list 1-5 paths or globs)"
+7. "What domains should be allowed for redirects/fetch? (e.g., yoursite.com, localhost — Stripe/PostHog auto-included)"
 
 After collecting answers, generate funnel-config.json by calling:
 \`\`\`bash
@@ -329,6 +330,8 @@ Where JSON has shape:
   "kpis": [
     { "kpi": "...", "metric_name": "...", "impression_event": "...", "click_events": [...], "target": 1.0, "priority": "P0" }
   ],
+  "expected_dau": 1500,
+  "min_detectable_lift_pct": 10,
   "allowed_files": ["..."],
   "allowed_domains": ["..."]
 }
@@ -358,6 +361,15 @@ function writeConfig(projectInfo, eventCatalog, interviewResult) {
     direction: k.direction || 'higher',
   }));
 
+  // DAU-driven experiment window: ceil(min_sample_size / DAU), clamped to [3, max_experiment_days].
+  // If DAU not provided, fall back to a 7-day default (user can edit later).
+  const minSample = 500;
+  const maxDays = 28;
+  const dau = Number(interviewResult.expected_dau) > 0 ? Number(interviewResult.expected_dau) : null;
+  const experimentWindowDays = dau
+    ? Math.max(3, Math.min(maxDays, Math.ceil(minSample / dau)))
+    : 7;
+
   const config = {
     project: {
       name: path.basename(ROOT_DIR),
@@ -368,12 +380,15 @@ function writeConfig(projectInfo, eventCatalog, interviewResult) {
       enabled: true,
       auto_merge: false,
       max_concurrent_experiments: 1,
-      min_sample_size: 500,
+      min_sample_size: minSample,
       significance_level: 0.05,
-      min_early_decision_days: 3,
-      experiment_duration_days: 7,
-      max_experiment_days: 14,
-      analysis_days: 7,
+      min_early_decision_days: 0,
+      experiment_window_days: experimentWindowDays,
+      max_experiment_days: maxDays,
+      expected_dau: dau,
+      min_detectable_lift_pct: Number(interviewResult.min_detectable_lift_pct) > 0
+        ? Number(interviewResult.min_detectable_lift_pct)
+        : 10,
     },
     optimization_targets: targets.length ? targets : [
       {
@@ -433,6 +448,11 @@ function writeConfig(projectInfo, eventCatalog, interviewResult) {
   } else {
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
     console.log(`  funnel-config.json written: ${configPath}`);
+    if (dau) {
+      console.log(`  experiment_window_days = ${experimentWindowDays} (ceil(${minSample}/${dau}), clamped to [3, ${maxDays}])`);
+    } else {
+      console.log(`  experiment_window_days = ${experimentWindowDays} (no DAU provided — using default; edit funnel-config.json once DAU is known)`);
+    }
   }
 
   return config;
@@ -498,7 +518,7 @@ async function main() {
     writeConfig(projectInfo, eventCatalog, interviewResult);
     console.log('\n[D-4] Config generation complete.');
     console.log('  Next: review funnel-config.json, then run:');
-    console.log('  node scripts/collect-data.mjs --days 7');
+    console.log('  node scripts/collect-data.mjs   # uses experiment_window_days from config');
   }
 }
 

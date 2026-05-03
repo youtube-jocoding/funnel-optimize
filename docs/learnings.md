@@ -8,7 +8,7 @@ These are patterns that emerged from running funnel-optimize on real projects. Y
 
 **Root cause**: CTR measures clicks. Clicks ≠ payments. The users you're attracting with louder CTAs are tire-kickers, not buyers.
 
-**Fix**: Set your **P0 KPI to actual revenue events**, not click events. animalface uses `premium_paid` (Stripe success URL → success page render) as P0. `premium_click` is at most P2 (proxy).
+**Fix**: Set your **P0 KPI to actual revenue events**, not click events. e.g. `payment_completed` (Stripe success URL → success page render) as P0. CTA clicks belong at P2 (proxy) or below.
 
 **How funnel-optimize enforces**: `priority: "P0"` targets dominate Ship/Kill decisions.
 

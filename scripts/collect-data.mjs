@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 
 /**
- * Step 1: Collect data from PostHog and git for weekly analysis.
+ * Step 1: Collect data from PostHog and git for the current experiment cycle.
  *
  * Usage:
- *   node scripts/funnel-automation/collect-data.mjs --days 7
+ *   node scripts/funnel-automation/collect-data.mjs
+ *   node scripts/funnel-automation/collect-data.mjs --days 14   # override window
  *
- * Output: .funnel-state/weekly-snapshot-{date}.json
+ * If --days is omitted, the script uses config.automation.experiment_window_days
+ * (legacy alias: experiment_duration_days), defaulting to 7.
+ *
+ * Output: .funnel-state/weekly-snapshot-{date}.json (filename retained for backwards compat)
  */
 
 import fs from 'fs';
@@ -21,17 +25,20 @@ loadEnv();
 // ─── CLI args ────────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
-let DAYS = 7;
+let DAYS_OVERRIDE = null;
 for (let i = 0; i < args.length; i++) {
-  if (args[i] === '--days' && args[i + 1]) { DAYS = parseInt(args[i + 1], 10); i++; }
+  if (args[i] === '--days' && args[i + 1]) { DAYS_OVERRIDE = parseInt(args[i + 1], 10); i++; }
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log(`\n=== Funnel Automation: Data Collection (${DAYS} days) ===\n`);
-
   const config = loadConfig();
+  const DAYS = DAYS_OVERRIDE
+    ?? config.automation?.experiment_window_days
+    ?? config.automation?.experiment_duration_days   // legacy alias
+    ?? 7;
+  console.log(`\n=== Funnel Automation: Data Collection (${DAYS} days) ===\n`);
   const posthog = createPostHogClient();
   const state = loadState();
   const dateFilter = `timestamp >= now() - toIntervalDay(${DAYS})`;

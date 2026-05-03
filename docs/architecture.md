@@ -2,11 +2,11 @@
 
 ## 7-Phase Pipeline
 
-The pipeline runs weekly. Each phase has a clear input, output, and decision rule.
+The pipeline is run on demand (no fixed cadence). Discovery sizes a per-project `experiment_window_days` from your DAU; significance can fire earlier. Each phase has a clear input, output, and decision rule.
 
 ### Phase 1: Data Collection + Experiment Evaluation
-- **Inputs**: PostHog API, last 7 days of events, current `state.json`
-- **Outputs**: `weekly-snapshot-{date}.json`, `evaluation-result.json`
+- **Inputs**: PostHog API, last `experiment_window_days` of events (from config), current `state.json`
+- **Outputs**: `weekly-snapshot-{date}.json` (filename retained for backwards compat), `evaluation-result.json`
 - **Decision**: `none` / `continue` / `winner_test|control` / `killed`
 
 ### Phase 2: Diagnostic Analysis
@@ -38,8 +38,8 @@ The pipeline runs weekly. Each phase has a clear input, output, and decision rul
 - Evaluate Viral / UGC / Usage / Referral / Collaboration loops
 
 ### Phase 7: Archive + Commit
-- archive.mjs writes weekly report
-- git commit + PR
+- archive.mjs writes a per-cycle report
+- git commit + PR (branch `funnel/{flag-key}`)
 
 ## Triple-Agent Architecture
 
@@ -87,7 +87,7 @@ The pipeline runs weekly. Each phase has a clear input, output, and decision rul
 ## Why Triple-Agent?
 
 - **Single agent has blind spots**. Claude tends toward conservative structural changes; Codex toward bold UX redesigns; Gemini toward copy/framing variations.
-- **Competition exposes mistakes**. animalface saw cases where Layer 1 winner had a fake-discount dark pattern that Layer 2 caught.
+- **Competition exposes mistakes**. Layer 2 has historically caught dark-pattern proposals (e.g. fake discounts) that Layer 1's automated scoring rated highly.
 - **Optional fallback**. If only Claude is installed, the pipeline runs single-agent (Layer 2 still applies).
 
 ## State Files

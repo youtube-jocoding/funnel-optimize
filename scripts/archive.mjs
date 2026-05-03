@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Archive weekly funnel optimization results.
+ * Archive funnel optimization results for the current cycle.
  *
  * Creates:
- *   docs/funnel-archive/YYYY-MM-DD.md   — Human-readable weekly report
+ *   docs/funnel-archive/YYYY-MM-DD.md   — Human-readable cycle report
  *   docs/funnel-archive/index.md        — Updated index of all reports
  *
  * Usage:
@@ -49,7 +49,7 @@ async function main() {
   const implPath = path.resolve(ROOT_DIR, '.funnel-state/implementation-summary.json');
   const implSummary = fs.existsSync(implPath) ? JSON.parse(fs.readFileSync(implPath, 'utf-8')) : null;
 
-  // ─── Generate weekly report markdown ───────────────────────────────────
+  // ─── Generate cycle report markdown ────────────────────────────────────
 
   const report = generateReport({
     date: today,
@@ -87,7 +87,7 @@ function generateReport({ date, snapshot, config, state, evalResult, plan, implS
   const meta = snapshot.meta;
   const kpi = snapshot.kpi;
 
-  let md = `# Weekly Funnel Report — ${date}\n\n`;
+  let md = `# Funnel Report — ${date}\n\n`;
   md += `> Period: ${meta.period_start} ~ ${meta.period_end} (${meta.period_days} days)\n`;
   md += `> Generated: ${meta.generated_at}\n\n`;
 
@@ -217,7 +217,7 @@ function generateReport({ date, snapshot, config, state, evalResult, plan, implS
   // ─── Git Changes ──────────────────────────────────────────────────────
 
   if (snapshot.git_changes && snapshot.git_changes.log) {
-    md += `## Git Changes This Week\n\n`;
+    md += `## Git Changes This Cycle\n\n`;
     md += `\`\`\`\n${snapshot.git_changes.log}\n\`\`\`\n\n`;
   }
 

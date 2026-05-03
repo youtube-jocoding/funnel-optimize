@@ -80,6 +80,6 @@ Three rounds of validation against the original animalface.site project caught a
 
 - v0.2: Plugin interface for data sources (Mixpanel, Amplitude, GA4)
 - v0.3: npm package + CLI installer
-- v0.4: GitHub Action for weekly automation
+- v0.4: GitHub Action for scheduled automation
 
 [0.1.0]: https://github.com/youtube-jocoding/funnel-optimize/releases/tag/v0.1.0

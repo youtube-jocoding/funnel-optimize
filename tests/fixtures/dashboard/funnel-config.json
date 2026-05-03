@@ -1,6 +1,6 @@
 {
   "project": {
-    "name": "animalface-test-fixture",
+    "name": "demo",
     "framework": "react",
     "north_star": {
       "metric": "weekly_paid_users",

@@ -13,18 +13,20 @@ Yes for the data pipeline (Phase 1, 4, 7). No for the AI agent phases (2, 3) —
 Set `POSTHOG_HOST=https://eu.i.posthog.com` in `.env`.
 
 ### Q: What if my project doesn't use feature flags?
-funnel-optimize creates them in PostHog automatically. You need to add the `useExperiment()` (or equivalent) hook on your frontend. See `examples/animalface/` for a React/Astro example.
+funnel-optimize creates them in PostHog automatically. You need to add the `useExperiment()` (or equivalent) hook on your frontend.
 
-### Q: How long does a weekly run take?
+### Q: How long does one cycle take?
 - Without Triple-Agent: 5-10 minutes
 - With Triple-Agent (claude+codex+gemini): 15-30 minutes (agents run in parallel, 30-min timeout each)
+
+The collection window is configured per-project (DAU-derived) in `automation.experiment_window_days`. Winners apply as soon as `min_sample_size + p<significance_level` is met — earlier than the window if the data is decisive.
 
 ### Q: What's the difference between this and Optimizely / VWO / GrowthBook?
 - They're A/B test platforms. funnel-optimize is an **A/B test designer + decision automator** that uses one of them (currently PostHog) as the underlying platform.
 - They give you a UI to define experiments. funnel-optimize **proposes the experiments** based on data analysis + accumulated learning.
 
 ### Q: Will this work for B2B SaaS / e-commerce / EdTech?
-The pipeline is data-driven, so yes — but `examples/animalface` is a B2C consumer app. Patterns from that case may not generalize. Discovery mode should help you identify your own KPIs.
+The pipeline is data-driven, so yes — Discovery mode probes your PostHog catalog and asks about your KPIs/DAU regardless of vertical. Patterns and target rates do differ across verticals; treat the defaults in `funnel-config.example.json` as a starting point.
 
 ### Q: Can I disable the Triple-Agent and use only Claude?
 Yes:

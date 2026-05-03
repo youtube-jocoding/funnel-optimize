@@ -1,0 +1,27 @@
+{
+  "name": "funnel-optimize",
+  "owner": {
+    "name": "조코딩 JoCoding",
+    "url": "https://github.com/youtube-jocoding"
+  },
+  "metadata": {
+    "description": "Single-plugin marketplace for funnel-optimize",
+    "version": "0.1.1"
+  },
+  "plugins": [
+    {
+      "name": "funnel-optimize",
+      "source": "./",
+      "description": "AI-driven funnel optimization with Triple-Agent A/B test design (Claude + Codex + Gemini). PostHog-powered.",
+      "version": "0.1.1",
+      "category": "growth",
+      "tags": [
+        "funnel",
+        "ab-testing",
+        "posthog",
+        "experimentation",
+        "kpi"
+      ]
+    }
+  ]
+}

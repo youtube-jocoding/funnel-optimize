@@ -1,11 +1,27 @@
-# Funnel Optimize
+# 🎯 Funnel Optimize
 
-> AI-driven funnel optimization for product teams.
+> **AI-driven funnel optimization for product teams.**
 > Triple-agent A/B test design (Claude + Codex + Gemini), weekly cadence, accumulated learning.
-> PostHog-powered. MIT license.
+> PostHog-powered. MIT license. **Validated on a real 18K-user product.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org/)
+[![Release](https://img.shields.io/github/v/release/youtube-jocoding/funnel-optimize?color=blue)](https://github.com/youtube-jocoding/funnel-optimize/releases)
+[![GitHub stars](https://img.shields.io/github/stars/youtube-jocoding/funnel-optimize?style=social)](https://github.com/youtube-jocoding/funnel-optimize)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+## ⚡ Install in Claude Code (10 seconds)
+
+```bash
+/plugin marketplace add youtube-jocoding/funnel-optimize
+/plugin install funnel-optimize@funnel-optimize
+```
+
+Then run `/funnel-discover` (one-time setup) and `/funnel-optimize` (weekly).
+
+> Manual install (without plugin): see [Quickstart](#quickstart-5-minutes) below.
+
+---
 
 ## Why this exists
 
@@ -47,7 +63,9 @@ Analyzes your project + dumps your PostHog events + interviews you about KPIs �
 - **Codex CLI / Gemini CLI** (optional — auto-fallback to single-agent)
 - **Git + GitHub CLI** (for PR creation)
 
-## Quickstart (5 minutes)
+## Quickstart (5 minutes — manual install)
+
+> **Easier:** use the [Claude Code plugin install](#-install-in-claude-code-10-seconds) above. The manual flow is for users who don't have Claude Code or want full control over file locations.
 
 ```bash
 # 1. Clone funnel-optimize beside your project
@@ -57,7 +75,7 @@ git clone https://github.com/youtube-jocoding/funnel-optimize.git ../funnel-opti
 cd /path/to/YOUR-project
 mkdir -p scripts/funnel-automation .claude/skills/funnel-optimize
 cp -r ../funnel-optimize/scripts/* scripts/funnel-automation/
-cp ../funnel-optimize/skill/SKILL.md .claude/skills/funnel-optimize/
+cp ../funnel-optimize/skills/funnel-optimize/SKILL.md .claude/skills/funnel-optimize/
 cp ../funnel-optimize/funnel-config.example.json funnel-config.json
 cp ../funnel-optimize/.env.example .env
 

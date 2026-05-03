@@ -5,6 +5,24 @@ All notable changes to funnel-optimize will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] — 2026-05-03
+
+Minor release adding **Claude Code plugin marketplace support** for one-line install via `/plugin marketplace add`.
+
+### Added
+
+- `.claude-plugin/plugin.json` — plugin metadata (name, version, description, author, keywords) per Claude Code plugin spec
+- `.claude-plugin/marketplace.json` — single-plugin marketplace catalog so users can install with `/plugin marketplace add youtube-jocoding/funnel-optimize` followed by `/plugin install funnel-optimize@funnel-optimize`
+- README badges: release version, GitHub stars, PRs Welcome
+- README "Install in Claude Code (10 seconds)" prominent section above manual quickstart
+
+### Changed
+
+- Skill location moved from `skill/SKILL.md` → `skills/funnel-optimize/SKILL.md` per Claude Code plugin convention (allows multiple skills per plugin in future)
+- Manual install instructions in README updated to reflect new path
+
+[0.1.1]: https://github.com/youtube-jocoding/funnel-optimize/releases/tag/v0.1.1
+
 ## [0.1.0] — 2026-05-03
 
 First public release. Extracted from animalface.site's funnel automation, generalized for any PostHog + Claude Code project.

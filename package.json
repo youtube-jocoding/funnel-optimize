@@ -1,6 +1,6 @@
 {
   "name": "funnel-optimize",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI-driven funnel optimization for product teams. Triple-agent A/B test design, weekly cadence, accumulated learning. PostHog-powered.",
   "type": "module",
   "license": "MIT",

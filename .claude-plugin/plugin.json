@@ -1,0 +1,23 @@
+{
+  "name": "funnel-optimize",
+  "version": "0.1.1",
+  "description": "AI-driven funnel optimization with Triple-Agent A/B test design (Claude + Codex + Gemini). PostHog-powered. Discovery + 7-Phase weekly cycle. Validated on 18K-user real product.",
+  "author": {
+    "name": "조코딩 JoCoding",
+    "url": "https://github.com/youtube-jocoding"
+  },
+  "keywords": [
+    "funnel-optimization",
+    "ab-testing",
+    "posthog",
+    "claude-code",
+    "experimentation",
+    "kpi",
+    "conversion-rate-optimization",
+    "triple-agent",
+    "ai-agents"
+  ],
+  "homepage": "https://github.com/youtube-jocoding/funnel-optimize",
+  "repository": "https://github.com/youtube-jocoding/funnel-optimize",
+  "license": "MIT"
+}

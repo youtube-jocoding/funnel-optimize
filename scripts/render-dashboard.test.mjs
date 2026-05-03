@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, copyFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { pValueTwoProp, loadInputs, detectPurchaseStep } from './render-dashboard.mjs';
+import { pValueTwoProp, loadInputs, detectPurchaseStep, buildFunnelModel } from './render-dashboard.mjs';
 
 const FIXTURES = fileURLToPath(new URL('../tests/fixtures/dashboard/', import.meta.url));
 
@@ -123,4 +123,65 @@ test('detectPurchaseStep honors config.dashboard.purchase_step_override', () => 
 
 test('detectPurchaseStep returns null when funnel.steps is missing', () => {
   assert.equal(detectPurchaseStep({}), null);
+});
+
+test('buildFunnelModel produces a step per config.funnel.steps with users + rates', () => {
+  const config = JSON.parse(readFileSync(join(FIXTURES, 'funnel-config.json'), 'utf-8'));
+  const snapshot = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-7.json'), 'utf-8'));
+
+  const model = buildFunnelModel(config, snapshot);
+  assert.equal(model.length, 5);
+  assert.equal(model[0].name, '$pageview');
+  assert.equal(model[0].users, 11563);
+  assert.equal(model[0].rateFromFirst, 1);
+  assert.equal(model[0].dropFromPrev, null);
+
+  assert.equal(model[1].name, 'photo_upload');
+  assert.equal(model[1].users, 9712);
+  assert.ok(Math.abs(model[1].rateFromFirst - 9712 / 11563) < 1e-9);
+  assert.equal(model[1].dropFromPrev, 9712 - 11563);
+
+  // premium_paid is the purchase step
+  assert.equal(model[4].name, 'premium_paid');
+  assert.equal(model[4].isPurchase, true);
+  assert.equal(model[4].users, 2);
+
+  // Earlier steps are not the purchase step
+  assert.equal(model[0].isPurchase, false);
+});
+
+test('buildFunnelModel attaches KPI data to steps whose name matches a target click event', () => {
+  const config = JSON.parse(readFileSync(join(FIXTURES, 'funnel-config.json'), 'utf-8'));
+  const snapshot = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-7.json'), 'utf-8'));
+  const model = buildFunnelModel(config, snapshot);
+
+  // premium_paid is a click_event for premium_paid_rate (P0) — KPI attached
+  const paid = model.find((s) => s.name === 'premium_paid');
+  assert.ok(paid.kpi, 'premium_paid should have a KPI summary');
+  assert.equal(paid.kpi.target_ctr, 1.0);
+  assert.equal(paid.kpi.ctr, 0.02);
+  assert.equal(paid.kpi.status, 'miss');
+
+  // $pageview is not a click_event for any target — no KPI
+  const pv = model.find((s) => s.name === '$pageview');
+  assert.equal(pv.kpi, null);
+});
+
+test('buildFunnelModel handles missing funnel rows as 0 users with a missing flag', () => {
+  const config = JSON.parse(readFileSync(join(FIXTURES, 'funnel-config.json'), 'utf-8'));
+  const snapshot = {
+    meta: {}, funnel: { results: [['$pageview', 1000]] }, kpi: {},
+  };
+  const model = buildFunnelModel(config, snapshot);
+  assert.equal(model[0].users, 1000);
+  assert.equal(model[1].users, 0);
+  assert.equal(model[1].missing, true);
+});
+
+test('buildFunnelModel returns rateFromFirst=null when first step has 0 users', () => {
+  const config = JSON.parse(readFileSync(join(FIXTURES, 'funnel-config.json'), 'utf-8'));
+  const snapshot = { meta: {}, funnel: { results: [['$pageview', 0]] }, kpi: {} };
+  const model = buildFunnelModel(config, snapshot);
+  assert.equal(model[0].users, 0);
+  assert.equal(model[0].rateFromFirst, null);
 });

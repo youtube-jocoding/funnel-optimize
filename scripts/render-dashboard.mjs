@@ -101,6 +101,89 @@ export function detectPurchaseStep(config) {
   return steps[steps.length - 1];
 }
 
+// ─── buildFunnelModel ────────────────────────────────────────────────────
+//
+// Walks config.funnel.steps in order. For each step, looks up the user
+// count from snapshot.funnel.results (rows of [step, users]) and computes:
+//   - rateFromFirst   : users / users(first step), null if first is 0
+//   - dropFromPrev    : users - prevUsers, null for the first step
+//   - dropPctFromPrev : dropFromPrev / prevUsers, null for first or prev=0
+// Attaches a KPI summary when the step name appears in any
+// optimization_target's click_events.
+
+export function buildFunnelModel(config, snapshot) {
+  const steps = config?.funnel?.steps || [];
+  const rows = snapshot?.funnel?.results || [];
+  const userByStep = Object.fromEntries(rows);
+  const purchaseStep = detectPurchaseStep(config);
+
+  const targetByEvent = new Map();
+  for (const t of config?.optimization_targets || []) {
+    for (const ev of t.click_events || []) {
+      if (!targetByEvent.has(ev)) targetByEvent.set(ev, t);
+    }
+  }
+
+  const kpiByName = snapshot?.kpi || {};
+  const firstUsers = userByStep[steps[0]] ?? 0;
+
+  const out = [];
+  let prevUsers = null;
+  for (const step of steps) {
+    const users = userByStep[step] ?? 0;
+    const missing = !(step in userByStep);
+    const rateFromFirst = firstUsers > 0 ? users / firstUsers : null;
+    const dropFromPrev = prevUsers === null ? null : users - prevUsers;
+    const dropPctFromPrev = prevUsers === null || prevUsers === 0
+      ? null
+      : (users - prevUsers) / prevUsers;
+
+    const target = targetByEvent.get(step);
+    let kpi = null;
+    if (target) {
+      const k = kpiByName[target.kpi];
+      if (k) {
+        kpi = {
+          metric_name: target.metric_name,
+          ctr: k.ctr,
+          target_ctr: k.target_ctr ?? target.target,
+          gap: k.gap ?? null,
+          status: statusForKpi(k.ctr, k.target_ctr ?? target.target),
+        };
+      }
+    }
+
+    out.push({
+      name: step,
+      users,
+      missing,
+      rateFromFirst,
+      dropFromPrev,
+      dropPctFromPrev,
+      isPurchase: step === purchaseStep,
+      kpi,
+    });
+    prevUsers = users;
+  }
+
+  return out;
+}
+
+// ─── statusForKpi ────────────────────────────────────────────────────────
+//
+// Returns one of 'pass' | 'up' | 'miss' | 'na'.
+//   pass : current >= target
+//   up   : current > 0 and within reach (>=50% of target)
+//   miss : current < target and below "up" threshold
+//   na   : either side missing
+
+export function statusForKpi(current, target) {
+  if (current == null || target == null || target === 0) return 'na';
+  if (current >= target) return 'pass';
+  if (current >= target * 0.5) return 'up';
+  return 'miss';
+}
+
 // Abramowitz & Stegun 26.2.17 approximation of the standard normal CDF.
 function normalCdf(x) {
   const b1 =  0.319381530;

@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, copyFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { pValueTwoProp, loadInputs, detectPurchaseStep, buildFunnelModel, buildTrendModel, buildExperimentModel } from './render-dashboard.mjs';
+import { pValueTwoProp, loadInputs, detectPurchaseStep, buildFunnelModel, buildTrendModel, buildExperimentModel, formatNumber, formatPct, formatRate, escapeHtml, formatLift, formatPValue } from './render-dashboard.mjs';
 
 const FIXTURES = fileURLToPath(new URL('../tests/fixtures/dashboard/', import.meta.url));
 
@@ -262,4 +262,41 @@ test('buildExperimentModel falls back to inline p-value when evaluation is null'
   assert.ok(m);
   // Inline p-value: control 0/4631, test 2/4931 → ~0.17
   assert.ok(m.pValue !== null && m.pValue > 0.10 && m.pValue < 0.30);
+});
+
+test('formatNumber adds thousands separators and handles small/large values', () => {
+  assert.equal(formatNumber(0), '0');
+  assert.equal(formatNumber(2), '2');
+  assert.equal(formatNumber(1234), '1,234');
+  assert.equal(formatNumber(11563), '11,563');
+});
+
+test('formatPct converts a 0..1 fraction to a "%.X%" string', () => {
+  assert.equal(formatPct(0.5), '50.0%');
+  assert.equal(formatPct(0.0337 / 100), '0.03%'); // 0.0337% rounds to 0.03 at 2dp
+  assert.equal(formatPct(null), '—');
+});
+
+test('formatRate formats a percentage value already in percent units', () => {
+  assert.equal(formatRate(0.02), '0.02%');
+  assert.equal(formatRate(50), '50.0%');
+  assert.equal(formatRate(null), '—');
+});
+
+test('escapeHtml escapes the dangerous characters', () => {
+  assert.equal(escapeHtml('<script>"a&b"</script>'), '&lt;script&gt;&quot;a&amp;b&quot;&lt;/script&gt;');
+});
+
+test('formatLift renders dashes for non-finite values', () => {
+  assert.equal(formatLift(Infinity), '—');
+  assert.equal(formatLift(null), '—');
+  assert.equal(formatLift(0), '+0.0%');
+  assert.equal(formatLift(0.521), '+52.1%');
+  assert.equal(formatLift(-0.337), '-33.7%');
+});
+
+test('formatPValue annotates significance at 0.05', () => {
+  assert.equal(formatPValue(0.04), 'p=0.040 — significant');
+  assert.equal(formatPValue(0.17), 'p=0.170 — not significant');
+  assert.equal(formatPValue(null), 'sample too small for inference');
 });

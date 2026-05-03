@@ -319,6 +319,40 @@ function pickVariant(variants, preferred) {
   return variants[0] ?? null;
 }
 
+// ─── Formatting helpers ──────────────────────────────────────────────────
+
+export function formatNumber(n) {
+  if (n == null) return '—';
+  return Number(n).toLocaleString('en-US');
+}
+
+export function formatPct(fraction) {
+  if (fraction == null || !Number.isFinite(fraction)) return '—';
+  return `${(fraction * 100).toFixed(fraction < 0.01 ? 2 : 1)}%`;
+}
+
+export function formatRate(pct) {
+  if (pct == null || !Number.isFinite(pct)) return '—';
+  return `${Number(pct).toFixed(pct < 1 ? 2 : 1)}%`;
+}
+
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+export function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
+}
+
+export function formatLift(x) {
+  if (x == null || !Number.isFinite(x)) return '—';
+  const sign = x >= 0 ? '+' : '-';
+  return `${sign}${(Math.abs(x) * 100).toFixed(1)}%`;
+}
+
+export function formatPValue(p) {
+  if (p == null || !Number.isFinite(p)) return 'sample too small for inference';
+  const significant = p < 0.05;
+  return `p=${p.toFixed(3)} — ${significant ? 'significant' : 'not significant'}`;
+}
+
 // Abramowitz & Stegun 26.2.17 approximation of the standard normal CDF.
 function normalCdf(x) {
   const b1 =  0.319381530;

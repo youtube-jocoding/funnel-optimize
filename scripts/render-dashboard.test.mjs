@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, copyFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { pValueTwoProp, loadInputs, detectPurchaseStep, buildFunnelModel, buildTrendModel, buildExperimentModel, formatNumber, formatPct, formatRate, escapeHtml, formatLift, formatPValue } from './render-dashboard.mjs';
+import { pValueTwoProp, loadInputs, detectPurchaseStep, buildFunnelModel, buildTrendModel, buildExperimentModel, formatNumber, formatPct, formatRate, escapeHtml, formatLift, formatPValue, renderHTML } from './render-dashboard.mjs';
 
 const FIXTURES = fileURLToPath(new URL('../tests/fixtures/dashboard/', import.meta.url));
 
@@ -299,4 +299,70 @@ test('formatPValue annotates significance at 0.05', () => {
   assert.equal(formatPValue(0.04), 'p=0.040 — significant');
   assert.equal(formatPValue(0.17), 'p=0.170 — not significant');
   assert.equal(formatPValue(null), 'sample too small for inference');
+});
+
+test('renderHTML produces a complete HTML document with inlined data block', () => {
+  const config = JSON.parse(readFileSync(join(FIXTURES, 'funnel-config.json'), 'utf-8'));
+  const snap = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-7.json'), 'utf-8'));
+  const w5 = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-5.json'), 'utf-8'));
+  const w6 = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-6.json'), 'utf-8'));
+  const evalRes = JSON.parse(readFileSync(join(FIXTURES, 'evaluation-result.json'), 'utf-8'));
+  const state = JSON.parse(readFileSync(join(FIXTURES, 'state.json'), 'utf-8'));
+
+  const html = renderHTML({
+    config,
+    funnel: buildFunnelModel(config, snap),
+    trend: buildTrendModel(config, [w5, w6, snap]),
+    experiment: buildExperimentModel(config, snap, evalRes, null),
+    history: state.history,
+    meta: snap.meta,
+    kpiByName: snap.kpi,
+  });
+
+  assert.match(html, /<!doctype html>/i);
+  assert.match(html, /<script type="application\/json" id="data">/);
+  assert.match(html, /id="funnel-current"/);
+  assert.match(html, /id="funnel-trend"/);
+  assert.match(html, /id="funnel-experiment"/);
+  // No external assets
+  assert.equal(/https?:\/\//.test(html.match(/<link[^>]+>/g)?.join('') ?? ''), false);
+});
+
+test('renderHTML hides the trend section when trend.available is false', () => {
+  const config = JSON.parse(readFileSync(join(FIXTURES, 'funnel-config.json'), 'utf-8'));
+  const snap = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-7.json'), 'utf-8'));
+  const html = renderHTML({
+    config,
+    funnel: buildFunnelModel(config, snap),
+    trend: { available: false, weeks: [] },
+    experiment: null,
+    history: [],
+    meta: snap.meta,
+    kpiByName: snap.kpi,
+  });
+  // Trend container is hidden
+  assert.match(html, /id="funnel-trend"[^>]*data-empty="true"/);
+  assert.match(html, /Run for 2\+ weeks/i);
+  // A/B section also hidden
+  assert.match(html, /id="funnel-experiment"[^>]*data-empty="true"/);
+});
+
+test('renderHTML escapes config-driven strings', () => {
+  const config = {
+    project: { name: '<x>"&y' },
+    funnel: { steps: ['$pageview'] },
+    optimization_targets: [],
+  };
+  const snap = { meta: { period_end: '2026-05-03', period_days: 7 }, funnel: { results: [['$pageview', 1]] }, kpi: {} };
+  const html = renderHTML({
+    config,
+    funnel: buildFunnelModel(config, snap),
+    trend: { available: false, weeks: [] },
+    experiment: null,
+    history: [],
+    meta: snap.meta,
+    kpiByName: snap.kpi,
+  });
+  assert.ok(html.includes('&lt;x&gt;'));
+  assert.ok(!html.includes('<x>'));
 });

@@ -17,8 +17,8 @@
 // instead of a misleading number.
 
 export function pValueTwoProp(c1, n1, c2, n2) {
-  if (n1 < 30 || n2 < 30) return null;
   if (n1 <= 0 || n2 <= 0) return null;
+  if (n1 < 30 || n2 < 30) return null;
 
   const p1 = c1 / n1;
   const p2 = c2 / n2;

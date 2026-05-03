@@ -13,6 +13,7 @@
     "evaluate": "node scripts/evaluate-experiment.mjs",
     "implement": "node scripts/implement-experiment.mjs",
     "archive": "node scripts/archive.mjs",
+    "dashboard": "node scripts/render-dashboard.mjs",
     "orchestrate": "bash scripts/orchestrate-triple-agent.sh",
     "test": "node --test scripts/render-dashboard.test.mjs"
   },

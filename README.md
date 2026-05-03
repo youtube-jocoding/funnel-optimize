@@ -51,7 +51,7 @@ Analyzes your project + dumps your PostHog events + interviews you about KPIs â†
 
 ```bash
 # 1. Clone funnel-optimize beside your project
-git clone https://github.com/your-org/funnel-optimize.git ../funnel-optimize
+git clone https://github.com/youtube-jocoding/funnel-optimize.git ../funnel-optimize
 
 # 2. Copy artifacts into YOUR project
 cd /path/to/YOUR-project

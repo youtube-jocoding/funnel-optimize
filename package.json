@@ -1,0 +1,34 @@
+{
+  "name": "funnel-optimize",
+  "version": "0.1.0",
+  "description": "AI-driven funnel optimization for product teams. Triple-agent A/B test design, weekly cadence, accumulated learning. PostHog-powered.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "discover": "node scripts/discover.mjs",
+    "collect": "node scripts/collect-data.mjs --days 7",
+    "evaluate": "node scripts/evaluate-experiment.mjs",
+    "implement": "node scripts/implement-experiment.mjs",
+    "archive": "node scripts/archive.mjs",
+    "orchestrate": "bash scripts/orchestrate-triple-agent.sh"
+  },
+  "keywords": [
+    "funnel",
+    "ab-testing",
+    "posthog",
+    "claude-code",
+    "growth",
+    "experimentation",
+    "kpi"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/funnel-optimize.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/funnel-optimize/issues"
+  }
+}

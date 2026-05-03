@@ -1,0 +1,120 @@
+{
+  "project": {
+    "name": "your-project",
+    "framework": "react",
+    "north_star": {
+      "metric": "weekly_paid_users",
+      "target": "growth",
+      "_note": "북극성 지표 — 사업 단계에 맞는 1개 지표 (매출/MAU/리텐션)"
+    }
+  },
+  "automation": {
+    "enabled": true,
+    "auto_merge": false,
+    "max_concurrent_experiments": 1,
+    "min_sample_size": 500,
+    "significance_level": 0.05,
+    "min_early_decision_days": 3,
+    "experiment_duration_days": 7,
+    "max_experiment_days": 14,
+    "analysis_days": 7
+  },
+  "optimization_targets": [
+    {
+      "kpi": "payment_completed_rate",
+      "metric_name": "Payment Completed Rate (real revenue)",
+      "impression_event": "result_view",
+      "click_events": ["payment_completed"],
+      "current": 0,
+      "target": 1.0,
+      "priority": "P0",
+      "direction": "higher",
+      "_note": "P0 = 실제 매출에 가장 가까운 지표. CTR 같은 proxy 금지"
+    }
+  ],
+  "funnel": {
+    "steps": ["$pageview", "result_view", "payment_completed"]
+  },
+  "guardrails": {
+    "no_dark_patterns": true,
+    "no_fake_urgency": true,
+    "no_fake_social_proof": true,
+    "preserve_accessibility": true,
+    "max_code_changes": 5,
+    "allowed_files": [
+      "src/components/MainComponent.tsx"
+    ],
+    "allowed_domains_for_redirects": [
+      "yoursite.com",
+      "localhost"
+    ]
+  },
+  "multi_agent": {
+    "enabled": true,
+    "agents": ["claude", "codex", "gemini"],
+    "timeout_seconds": 1800,
+    "auto_select_threshold": 10,
+    "human_review_threshold": 5,
+    "fallback_agent": "claude",
+    "preserve_losing_proposal": true,
+    "scoring_weights": {
+      "completeness": 15,
+      "schema_validity": 20,
+      "code_validity": 25,
+      "guardrail_compliance": 15,
+      "kpi_alignment": 10,
+      "novelty": 10,
+      "analysis_depth": 5
+    }
+  },
+  "value_metrics": {
+    "lir": {
+      "name": "Leading Indicator of Retention",
+      "description": "재방문 가능성을 예측하는 행동 지표",
+      "definition": "결과 확인 후 추가 행동 (공유/결제/재시도)",
+      "events": ["result_share", "payment_completed"],
+      "denominator_event": "result_view",
+      "target_rate": 15,
+      "current": null,
+      "rationale": "결과를 보고 추가 행동을 한 사용자는 가치 경험 → 재방문/바이럴 가능성 높음"
+    },
+    "time_to_value": {
+      "name": "Time-to-Value",
+      "description": "사용자가 핵심 가치에 도달하는 시간",
+      "milestones": {
+        "page_to_action": {
+          "start": "$pageview",
+          "end": "primary_action",
+          "target_seconds": 30,
+          "description": "방문 → 첫 행동"
+        }
+      }
+    },
+    "health_rollup": {
+      "name": "Weekly Health Rollup",
+      "description": "주간 사용자 건강도 세그먼트",
+      "segments": {
+        "activated": {
+          "description": "결과 확인 + 추가 행동",
+          "condition": "result_view AND (result_share OR payment_completed)"
+        },
+        "completed": {
+          "description": "결과 확인까지 도달했으나 추가 행동 없음",
+          "condition": "result_view AND NOT (result_share OR payment_completed)"
+        },
+        "stuck": {
+          "description": "행동 시작했으나 결과 미도달",
+          "condition": "primary_action AND NOT result_view"
+        },
+        "bounced": {
+          "description": "방문했으나 행동 없음",
+          "condition": "$pageview AND NOT primary_action"
+        }
+      }
+    }
+  },
+  "posthog": {
+    "host": "https://us.i.posthog.com",
+    "feature_flag_prefix": "funnel-exp-"
+  }
+}

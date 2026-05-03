@@ -1,0 +1,6 @@
+.env
+.env.local
+.funnel-state/
+node_modules/
+.DS_Store
+*.log

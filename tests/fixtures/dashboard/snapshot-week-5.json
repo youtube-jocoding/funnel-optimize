@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "generated_at": "2026-04-19T00:00:00.000Z",
+    "period_days": 7,
+    "period_start": "2026-04-12",
+    "period_end": "2026-04-19"
+  },
+  "kpi": {
+    "premium_paid_rate": { "impressions": 8400, "clicks": 0, "ctr": 0.0, "target_ctr": 1.0, "gap": 1.0 },
+    "checkout_paid_rate": { "impressions": 4, "clicks": 0, "ctr": 0.0, "target_ctr": 50.0, "gap": 50.0 },
+    "premium_cta_ctr": { "impressions": 3200, "clicks": 4, "ctr": 0.13, "target_ctr": 4.0, "gap": 3.87 }
+  },
+  "checkout_error_rate": 0,
+  "funnel": {
+    "name": "funnel_steps",
+    "results": [
+      ["$pageview", 10100],
+      ["photo_upload", 8500],
+      ["result_view", 8400],
+      ["premium_checkout", 4],
+      ["premium_paid", 0]
+    ]
+  },
+  "daily_traffic": { "name": "daily_traffic", "results": [] },
+  "event_summary": { "name": "event_summary", "results": [] },
+  "experiment_variants": null,
+  "value_metrics": {},
+  "state": {}
+}

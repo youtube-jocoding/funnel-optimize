@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "generated_at": "2026-05-03T00:00:00.000Z",
+    "period_days": 7,
+    "period_start": "2026-04-26",
+    "period_end": "2026-05-03"
+  },
+  "kpi": {
+    "premium_paid_rate": { "impressions": 9562, "clicks": 2, "ctr": 0.02, "target_ctr": 1.0, "gap": 0.98 },
+    "checkout_paid_rate": { "impressions": 60, "clicks": 2, "ctr": 3.33, "target_ctr": 50.0, "gap": 46.67 },
+    "premium_cta_ctr": { "impressions": 3739, "clicks": 85, "ctr": 2.27, "target_ctr": 4.0, "gap": 1.73 }
+  },
+  "checkout_error_rate": 0,
+  "funnel": {
+    "name": "funnel_steps",
+    "results": [
+      ["$pageview", 11563],
+      ["photo_upload", 9712],
+      ["result_view", 9562],
+      ["premium_checkout", 60],
+      ["premium_paid", 2]
+    ]
+  },
+  "daily_traffic": { "name": "daily_traffic", "results": [
+    ["2026-04-26", 1700, 1654],
+    ["2026-04-27", 1680, 1641],
+    ["2026-04-28", 1620, 1580],
+    ["2026-04-29", 1700, 1660],
+    ["2026-04-30", 1690, 1647],
+    ["2026-05-01", 1640, 1600],
+    ["2026-05-02", 1533, 1781]
+  ]},
+  "event_summary": { "name": "event_summary", "results": [["$pageview", 11563, 11563]] },
+  "experiment_variants": {
+    "name": "experiment_variants",
+    "results": [
+      ["control", "result_view", 4631, 4631],
+      ["control", "premium_checkout", 8, 8],
+      ["control", "premium_paid", 0, 0],
+      ["test", "result_view", 4931, 4931],
+      ["test", "premium_checkout", 52, 52],
+      ["test", "premium_paid", 2, 2]
+    ]
+  },
+  "value_metrics": {},
+  "state": { "active_experiment": { "flag_key": "funnel-exp-20260426-premium-first-layout" } }
+}

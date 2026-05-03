@@ -13,7 +13,8 @@
     "evaluate": "node scripts/evaluate-experiment.mjs",
     "implement": "node scripts/implement-experiment.mjs",
     "archive": "node scripts/archive.mjs",
-    "orchestrate": "bash scripts/orchestrate-triple-agent.sh"
+    "orchestrate": "bash scripts/orchestrate-triple-agent.sh",
+    "test": "node --test scripts/render-dashboard.test.mjs"
   },
   "keywords": [
     "funnel",

@@ -1,0 +1,53 @@
+{
+  "project": {
+    "name": "animalface-test-fixture",
+    "framework": "react",
+    "north_star": {
+      "metric": "weekly_paid_users",
+      "target": "growth"
+    }
+  },
+  "automation": {
+    "enabled": true,
+    "experiment_duration_days": 14
+  },
+  "optimization_targets": [
+    {
+      "kpi": "premium_paid_rate",
+      "metric_name": "Premium Paid Rate",
+      "impression_event": "result_view",
+      "click_events": ["premium_paid"],
+      "current": 0,
+      "target": 1.0,
+      "priority": "P0",
+      "direction": "higher"
+    },
+    {
+      "kpi": "checkout_paid_rate",
+      "metric_name": "Checkout to Paid",
+      "impression_event": "premium_checkout",
+      "click_events": ["premium_paid"],
+      "current": 0,
+      "target": 50.0,
+      "priority": "P0",
+      "direction": "higher"
+    },
+    {
+      "kpi": "premium_cta_ctr",
+      "metric_name": "Premium CTA CTR",
+      "impression_event": "premium_cta_impression",
+      "click_events": ["premium_click"],
+      "current": 1.26,
+      "target": 4.0,
+      "priority": "P2",
+      "direction": "higher"
+    }
+  ],
+  "funnel": {
+    "steps": ["$pageview", "photo_upload", "result_view", "premium_checkout", "premium_paid"]
+  },
+  "dashboard": {
+    "trend_weeks": 8,
+    "default_scale": "auto"
+  }
+}

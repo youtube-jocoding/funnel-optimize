@@ -1,0 +1,10 @@
+{
+  "experiment": "Premium-First Result Layout",
+  "flag_key": "funnel-exp-20260426-premium-first-layout",
+  "decision": { "action": "continue", "reason": "p=0.1682 not yet significant; first revenue signal" },
+  "p_value": 0.1682,
+  "metrics": {
+    "control": { "impressions": 4631, "clicks": 0, "ctr": 0.0 },
+    "test": { "impressions": 4931, "clicks": 2, "ctr": 0.0406 }
+  }
+}

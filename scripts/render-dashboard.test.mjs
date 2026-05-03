@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { mkdirSync, mkdtempSync, copyFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, copyFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { pValueTwoProp, loadInputs } from './render-dashboard.mjs';
+import { pValueTwoProp, loadInputs, detectPurchaseStep } from './render-dashboard.mjs';
 
 const FIXTURES = fileURLToPath(new URL('../tests/fixtures/dashboard/', import.meta.url));
 
@@ -89,4 +89,38 @@ test('pValueTwoProp matches the animalface week-7 reported p ≈ 0.17', () => {
 
 test('pValueTwoProp returns null on zero totals', () => {
   assert.equal(pValueTwoProp(0, 0, 0, 0), null);
+});
+
+test('detectPurchaseStep picks the P0 click event that appears in funnel steps', () => {
+  const config = JSON.parse(
+    readFileSync(join(FIXTURES, 'funnel-config.json'), 'utf-8'),
+  );
+  // P0 + direction higher → premium_paid_rate, click_events ['premium_paid'].
+  // 'premium_paid' is in funnel.steps → that's the purchase step.
+  assert.equal(detectPurchaseStep(config), 'premium_paid');
+});
+
+test('detectPurchaseStep falls back to the last funnel step when no P0 match', () => {
+  const config = {
+    funnel: { steps: ['$pageview', 'foo', 'bar'] },
+    optimization_targets: [
+      { kpi: 'x', click_events: ['nope'], priority: 'P0', direction: 'higher' },
+    ],
+  };
+  assert.equal(detectPurchaseStep(config), 'bar');
+});
+
+test('detectPurchaseStep honors config.dashboard.purchase_step_override', () => {
+  const config = {
+    funnel: { steps: ['$pageview', 'a', 'b', 'c'] },
+    dashboard: { purchase_step_override: 'a' },
+    optimization_targets: [
+      { kpi: 'x', click_events: ['c'], priority: 'P0', direction: 'higher' },
+    ],
+  };
+  assert.equal(detectPurchaseStep(config), 'a');
+});
+
+test('detectPurchaseStep returns null when funnel.steps is missing', () => {
+  assert.equal(detectPurchaseStep({}), null);
 });

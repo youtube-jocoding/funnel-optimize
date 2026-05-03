@@ -78,6 +78,29 @@ function readJsonOrNull(p) {
   catch { return null; }
 }
 
+// ─── detectPurchaseStep ──────────────────────────────────────────────────
+//
+// Heuristic: highest-priority "P0/higher" optimization target whose
+// click_events intersect funnel.steps. Allows explicit override.
+
+export function detectPurchaseStep(config) {
+  const steps = config?.funnel?.steps;
+  if (!Array.isArray(steps) || steps.length === 0) return null;
+
+  const override = config?.dashboard?.purchase_step_override;
+  if (override && steps.includes(override)) return override;
+
+  const targets = config?.optimization_targets || [];
+  for (const t of targets) {
+    if (t.priority !== 'P0' || t.direction !== 'higher') continue;
+    for (const ev of t.click_events || []) {
+      if (steps.includes(ev)) return ev;
+    }
+  }
+
+  return steps[steps.length - 1];
+}
+
 // Abramowitz & Stegun 26.2.17 approximation of the standard normal CDF.
 function normalCdf(x) {
   const b1 =  0.319381530;

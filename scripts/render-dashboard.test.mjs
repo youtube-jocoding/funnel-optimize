@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, copyFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { pValueTwoProp, loadInputs, detectPurchaseStep, buildFunnelModel, buildTrendModel } from './render-dashboard.mjs';
+import { pValueTwoProp, loadInputs, detectPurchaseStep, buildFunnelModel, buildTrendModel, buildExperimentModel } from './render-dashboard.mjs';
 
 const FIXTURES = fileURLToPath(new URL('../tests/fixtures/dashboard/', import.meta.url));
 
@@ -223,4 +223,43 @@ test('buildTrendModel respects dashboard.trend_weeks cap', () => {
   // Should keep the most recent 2 weeks
   assert.equal(trend.weeks[0].periodEnd, '2026-04-26');
   assert.equal(trend.weeks[1].periodEnd, '2026-05-03');
+});
+
+test('buildExperimentModel returns null when experiment_variants is missing', () => {
+  const config = JSON.parse(readFileSync(join(FIXTURES, 'funnel-config.json'), 'utf-8'));
+  const snap = { funnel: { results: [] }, experiment_variants: null };
+  assert.equal(buildExperimentModel(config, snap, null, null), null);
+});
+
+test('buildExperimentModel groups variants and computes per-step rate + lift', () => {
+  const config = JSON.parse(readFileSync(join(FIXTURES, 'funnel-config.json'), 'utf-8'));
+  const snap = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-7.json'), 'utf-8'));
+  const evalRes = JSON.parse(readFileSync(join(FIXTURES, 'evaluation-result.json'), 'utf-8'));
+
+  const m = buildExperimentModel(config, snap, evalRes, null);
+  assert.ok(m, 'expected an experiment model');
+  assert.equal(m.pValue, 0.1682);
+  assert.equal(m.decision, 'continue');
+
+  // Control & test funnels each have a row per step
+  const controlPaid = m.control.find((s) => s.name === 'premium_paid');
+  const testPaid = m.test.find((s) => s.name === 'premium_paid');
+  assert.equal(controlPaid.users, 0);
+  assert.equal(testPaid.users, 2);
+
+  // Lift: test - control over control's rate. control rate = 0, so lift is "infinite"
+  // Encode as Infinity, render layer turns it into "—".
+  const liftPaid = m.lift.find((l) => l.name === 'premium_paid');
+  assert.equal(liftPaid.controlRate, 0);
+  assert.ok(testPaid.rateFromFirst > 0);
+  assert.equal(liftPaid.lift, Infinity);
+});
+
+test('buildExperimentModel falls back to inline p-value when evaluation is null', () => {
+  const config = JSON.parse(readFileSync(join(FIXTURES, 'funnel-config.json'), 'utf-8'));
+  const snap = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-7.json'), 'utf-8'));
+  const m = buildExperimentModel(config, snap, null, null);
+  assert.ok(m);
+  // Inline p-value: control 0/4631, test 2/4931 → ~0.17
+  assert.ok(m.pValue !== null && m.pValue > 0.10 && m.pValue < 0.30);
 });

@@ -124,3 +124,4 @@ The pipeline runs weekly. Each phase has a clear input, output, and decision rul
 | `orchestrate-triple-agent.sh` | Phase 3 orchestrator + CLI fallback |
 | `run-{claude,codex,gemini}-agent.sh` | Per-agent runners |
 | `synthesize-winner.sh` | Layer 2 |
+| `render-dashboard.mjs` | Visual funnel dashboard (HTML output) |

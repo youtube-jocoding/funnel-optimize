@@ -55,6 +55,25 @@ Analyzes your project + dumps your PostHog events + interviews you about KPIs �
 6. **Implement** code changes + create PostHog feature flag (with build validation + rollback)
 7. **Archive + commit + PR**
 
+## Visual Dashboard
+
+After any weekly run, `dashboard.html` is regenerated with a single command:
+
+```bash
+npm run dashboard
+```
+
+It produces a self-contained, zero-dep HTML file at `docs/funnel-archive/dashboard.html` with:
+
+- Week-over-week funnel-rate trend (last 8 weeks by default)
+- Current funnel — every step's users, cumulative rate, drop-off, and KPI gap
+- Active experiment — Test vs Control side-by-side with lift and p-value at every step (including purchase)
+- Compact experiment history table
+
+`archive.mjs` calls it automatically as its final step. Open the file directly in any browser — no server, no CDN, no build.
+
+A live demo from the animalface case study is committed at [`examples/animalface/dashboard.html`](examples/animalface/dashboard.html).
+
 ## Requirements
 
 - **Node 18+** (uses native fetch, no deps)

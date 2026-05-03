@@ -9,6 +9,9 @@
  * Output: docs/funnel-archive/dashboard.html
  */
 
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+
 // ─── pValueTwoProp ────────────────────────────────────────────────────────
 //
 // Two-proportion z-test → two-tailed p-value.
@@ -34,9 +37,6 @@ export function pValueTwoProp(c1, n1, c2, n2) {
   return { p, z };
 }
 
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
-
 // ─── loadInputs ───────────────────────────────────────────────────────────
 //
 // Reads the inputs needed to render a dashboard. `rootDir` defaults to the
@@ -58,13 +58,12 @@ export function loadInputs(rootDir = process.cwd()) {
   const config = JSON.parse(readFileSync(configPath, 'utf-8'));
   const snapshot = JSON.parse(readFileSync(latestPath, 'utf-8'));
 
-  // Globs are simple here; just filter by prefix.
-  const history = existsSync(stateDir)
-    ? readdirSync(stateDir)
-        .filter((f) => /^weekly-snapshot-\d{4}-\d{2}-\d{2}\.json$/.test(f))
-        .sort() // ISO-date filenames sort lexicographically == chronologically
-        .map((f) => JSON.parse(readFileSync(join(stateDir, f), 'utf-8')))
-    : [];
+  // stateDir is guaranteed to exist by the latestPath check above.
+  // Filter to ISO-dated weekly snapshots; lexicographic sort = chronological.
+  const history = readdirSync(stateDir)
+    .filter((f) => /^weekly-snapshot-\d{4}-\d{2}-\d{2}\.json$/.test(f))
+    .sort()
+    .map((f) => JSON.parse(readFileSync(join(stateDir, f), 'utf-8')));
 
   const state = readJsonOrNull(join(stateDir, 'state.json'));
   const evaluation = readJsonOrNull(join(stateDir, 'evaluation-result.json'));

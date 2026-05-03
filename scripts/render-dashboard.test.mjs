@@ -1,10 +1,12 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { pValueTwoProp } from './render-dashboard.mjs';
-import { loadInputs } from './render-dashboard.mjs';
-import { mkdirSync, mkdtempSync, writeFileSync, copyFileSync, existsSync, readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, copyFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { pValueTwoProp, loadInputs } from './render-dashboard.mjs';
+
+const FIXTURES = fileURLToPath(new URL('../tests/fixtures/dashboard/', import.meta.url));
 
 function buildFixtureRoot({ withLatest = true, withHistory = true, withState = true, withEval = true } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'fnopt-'));
@@ -12,21 +14,21 @@ function buildFixtureRoot({ withLatest = true, withHistory = true, withState = t
   mkdirSync(stateDir, { recursive: true });
 
   // Always write config at the project root.
-  copyFileSync('tests/fixtures/dashboard/funnel-config.json', join(root, 'funnel-config.json'));
+  copyFileSync(join(FIXTURES, 'funnel-config.json'), join(root, 'funnel-config.json'));
 
   if (withLatest) {
-    copyFileSync('tests/fixtures/dashboard/snapshot-week-7.json', join(stateDir, 'latest-snapshot.json'));
+    copyFileSync(join(FIXTURES, 'snapshot-week-7.json'), join(stateDir, 'latest-snapshot.json'));
   }
   if (withHistory) {
-    copyFileSync('tests/fixtures/dashboard/snapshot-week-5.json', join(stateDir, 'weekly-snapshot-2026-04-19.json'));
-    copyFileSync('tests/fixtures/dashboard/snapshot-week-6.json', join(stateDir, 'weekly-snapshot-2026-04-26.json'));
-    copyFileSync('tests/fixtures/dashboard/snapshot-week-7.json', join(stateDir, 'weekly-snapshot-2026-05-03.json'));
+    copyFileSync(join(FIXTURES, 'snapshot-week-5.json'), join(stateDir, 'weekly-snapshot-2026-04-19.json'));
+    copyFileSync(join(FIXTURES, 'snapshot-week-6.json'), join(stateDir, 'weekly-snapshot-2026-04-26.json'));
+    copyFileSync(join(FIXTURES, 'snapshot-week-7.json'), join(stateDir, 'weekly-snapshot-2026-05-03.json'));
   }
   if (withState) {
-    copyFileSync('tests/fixtures/dashboard/state.json', join(stateDir, 'state.json'));
+    copyFileSync(join(FIXTURES, 'state.json'), join(stateDir, 'state.json'));
   }
   if (withEval) {
-    copyFileSync('tests/fixtures/dashboard/evaluation-result.json', join(stateDir, 'evaluation-result.json'));
+    copyFileSync(join(FIXTURES, 'evaluation-result.json'), join(stateDir, 'evaluation-result.json'));
   }
   return root;
 }

@@ -184,6 +184,26 @@ export function statusForKpi(current, target) {
   return 'miss';
 }
 
+// ─── buildTrendModel ─────────────────────────────────────────────────────
+//
+// Recompute the funnel for each historical snapshot so the trend chart
+// can plot how cumulative conversion rates evolved week over week.
+
+export function buildTrendModel(config, history) {
+  const cap = config?.dashboard?.trend_weeks ?? 8;
+  if (!Array.isArray(history) || history.length < 2) {
+    return { available: false, weeks: [] };
+  }
+
+  const recent = history.slice(-cap);
+  const weeks = recent.map((snap) => ({
+    periodEnd: snap?.meta?.period_end ?? null,
+    steps: buildFunnelModel(config, snap),
+  }));
+
+  return { available: true, weeks };
+}
+
 // Abramowitz & Stegun 26.2.17 approximation of the standard normal CDF.
 function normalCdf(x) {
   const b1 =  0.319381530;

@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, copyFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { pValueTwoProp, loadInputs, detectPurchaseStep, buildFunnelModel } from './render-dashboard.mjs';
+import { pValueTwoProp, loadInputs, detectPurchaseStep, buildFunnelModel, buildTrendModel } from './render-dashboard.mjs';
 
 const FIXTURES = fileURLToPath(new URL('../tests/fixtures/dashboard/', import.meta.url));
 
@@ -184,4 +184,43 @@ test('buildFunnelModel returns rateFromFirst=null when first step has 0 users', 
   const model = buildFunnelModel(config, snapshot);
   assert.equal(model[0].users, 0);
   assert.equal(model[0].rateFromFirst, null);
+});
+
+test('buildTrendModel returns weeks built from history with available=true when N>=2', () => {
+  const config = JSON.parse(readFileSync(join(FIXTURES, 'funnel-config.json'), 'utf-8'));
+  const w5 = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-5.json'), 'utf-8'));
+  const w6 = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-6.json'), 'utf-8'));
+  const w7 = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-7.json'), 'utf-8'));
+
+  const trend = buildTrendModel(config, [w5, w6, w7]);
+  assert.equal(trend.available, true);
+  assert.equal(trend.weeks.length, 3);
+  assert.equal(trend.weeks[0].periodEnd, '2026-04-19');
+  assert.equal(trend.weeks[2].periodEnd, '2026-05-03');
+
+  // Each week's steps should be a FunnelStep[] of the same shape buildFunnelModel returns.
+  assert.equal(trend.weeks[2].steps[0].name, '$pageview');
+  // Cumulative rate to result_view should be ~ 9562 / 11563
+  const resultStep = trend.weeks[2].steps.find((s) => s.name === 'result_view');
+  assert.ok(Math.abs(resultStep.rateFromFirst - 9562 / 11563) < 1e-9);
+});
+
+test('buildTrendModel returns available=false when history has fewer than 2 weeks', () => {
+  const config = JSON.parse(readFileSync(join(FIXTURES, 'funnel-config.json'), 'utf-8'));
+  const w7 = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-7.json'), 'utf-8'));
+  assert.equal(buildTrendModel(config, []).available, false);
+  assert.equal(buildTrendModel(config, [w7]).available, false);
+});
+
+test('buildTrendModel respects dashboard.trend_weeks cap', () => {
+  const config = JSON.parse(readFileSync(join(FIXTURES, 'funnel-config.json'), 'utf-8'));
+  const w5 = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-5.json'), 'utf-8'));
+  const w6 = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-6.json'), 'utf-8'));
+  const w7 = JSON.parse(readFileSync(join(FIXTURES, 'snapshot-week-7.json'), 'utf-8'));
+  const capped = { ...config, dashboard: { ...(config.dashboard || {}), trend_weeks: 2 } };
+  const trend = buildTrendModel(capped, [w5, w6, w7]);
+  assert.equal(trend.weeks.length, 2);
+  // Should keep the most recent 2 weeks
+  assert.equal(trend.weeks[0].periodEnd, '2026-04-26');
+  assert.equal(trend.weeks[1].periodEnd, '2026-05-03');
 });

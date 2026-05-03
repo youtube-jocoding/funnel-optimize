@@ -34,6 +34,51 @@ export function pValueTwoProp(c1, n1, c2, n2) {
   return { p, z };
 }
 
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+
+// ─── loadInputs ───────────────────────────────────────────────────────────
+//
+// Reads the inputs needed to render a dashboard. `rootDir` defaults to the
+// current working directory so the CLI just works; tests pass a temp dir.
+
+export function loadInputs(rootDir = process.cwd()) {
+  const configPath = join(rootDir, 'funnel-config.json');
+  const stateDir = join(rootDir, '.funnel-state');
+  const latestPath = join(stateDir, 'latest-snapshot.json');
+
+  if (!existsSync(latestPath)) {
+    throw new Error(
+      `No snapshot found at ${latestPath}. ` +
+      `Run 'npm run collect' first to produce a weekly snapshot, ` +
+      `then re-run the dashboard.`,
+    );
+  }
+
+  const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+  const snapshot = JSON.parse(readFileSync(latestPath, 'utf-8'));
+
+  // Globs are simple here; just filter by prefix.
+  const history = existsSync(stateDir)
+    ? readdirSync(stateDir)
+        .filter((f) => /^weekly-snapshot-\d{4}-\d{2}-\d{2}\.json$/.test(f))
+        .sort() // ISO-date filenames sort lexicographically == chronologically
+        .map((f) => JSON.parse(readFileSync(join(stateDir, f), 'utf-8')))
+    : [];
+
+  const state = readJsonOrNull(join(stateDir, 'state.json'));
+  const evaluation = readJsonOrNull(join(stateDir, 'evaluation-result.json'));
+  const plan = readJsonOrNull(join(stateDir, 'experiment-plan.json'));
+
+  return { config, snapshot, history, state, evaluation, plan };
+}
+
+function readJsonOrNull(p) {
+  if (!existsSync(p)) return null;
+  try { return JSON.parse(readFileSync(p, 'utf-8')); }
+  catch { return null; }
+}
+
 // Abramowitz & Stegun 26.2.17 approximation of the standard normal CDF.
 function normalCdf(x) {
   const b1 =  0.319381530;
